@@ -1,0 +1,59 @@
+#+title:      Security in the Linux ecosystem
+#+date:       [2022-10-26 Wed 13:14]
+#+filetags:   :linux:
+#+identifier: 20221026T131417
+
+* Files
+
+=/etc/passwd= and =/etc/shadow= both act as databases containing
+respectively the users of the system and their passwords.
+
+=/etc/login.defs= is a means to configure the control definitions of
+the shadow package.
+
+These two files are not portable, since they are restricted to the
+system in which they are located.
+
+* NSS
+
+As the UNIX ecosystem grew, so did the methods we use to
+authenticate. This lead to the creation of the LDAP and NIS protocols
+which give us the opportunity to centrally define and configure the
+users of a given network.
+
+[[https://man7.org/linux/man-pages/man5/nss.5.html][NSS]] provides a single interface to all of these authentication
+methods.
+
+#+begin_quote
+Each call to a function which retrieves data from a system database
+like the password or group database is handled by the Name Service
+Switch implementation in the GNU C library.  The various services
+provided are implemented by independent modules, each of which
+naturally varies widely from the other.
+#+end_quote
+
+NSS is made to intercept function calls to a system database and
+determines, through its configuration file (=/etc/nsswitch.conf=), how
+it should authenticate.
+
+For every system database, e.g. =hosts=, we can define a list of
+sources from which that information should be obtained,
+e.g. =dns nis files=.
+
+NSS is a modular library, each and every source is handled by its very
+own library, e.g.:
+- =/lib/libnss_dns.so.2= handles name resolution through the DNS
+  protocol.
+
+* PAM
+
+PAM (Pluggable Authentication Modules) is a system of libraries that
+handle the authentication tasks of applications (services) on the
+system.
+
+It allows the system administrator to configure how a system
+application goes about the authentication of the system's users.
+
+For more information on PAM, visit [[https://web.mit.edu/rhel-doc/4/RH-DOCS/rhel-rg-en-4/s1-pam-format.html][this reference guide]] or this [[https://tldp.org/HOWTO/User-Authentication-HOWTO/x115.html][how-to]].
+
+* TODO SSSD

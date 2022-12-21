@@ -1,0 +1,103 @@
+#+title:      Exploring the kernel space
+#+date:       [2022-10-22 Sat 14:28]
+#+filetags:   :linux:
+#+identifier: 20221022T142847
+
+* User Space
+
+Programs in user space do not have direct access to the system's
+hardware, they have to interact with the various APIs offered by the
+Linux kernel.
+
+An interesting fact is that systemd is actually part of user space.
+
+It's loaded by the kernel in the early stages of the boot process, and
+hands over control to it so that it can manage the rest of the
+system's processes.
+
+* Kernel Space
+
+Kernel space might appear as a mystical part of the system, but it's
+quite nicely structured.
+
+There's the core of the kernel, and the modules that are built against
+it: graphics, network, input/output device drivers, etc.
+
+* Kernel modules
+
+Kernel modules are located at =/lib/modules/$(uname -r)=, and they end with a =.ko= extension.
+
+When placing a module inside of this directory, be sure to regenerate the list of modules and their dependencies with this command:
+
+#+begin_src sh
+depmod -a
+#+end_src
+
+To get a list of loaded kernel modules:
+
+#+begin_src sh
+lsmod
+#+end_src
+
+There's two ways to unload a kernel module:
+
+#+begin_src sh
+rmmod <module>
+#+end_src
+
+#+begin_src sh
+modprobe -r <module>
+#+end_src
+
+There's two ways to install/load a kernel module:
+
+#+begin_src sh
+insmod <module-filename>
+#+end_src
+
+#+begin_src sh
+modprobe <module>
+#+end_src
+
+To load a kernel module upon system startup, create a file named
+=<module>.modules= underneath =/etc/sysconfig/modules/=.
+
+* Brewing your own kernel
+
+Before you start compiling the kernel, you should configure it:
+
+#+begin_src sh
+make {x,g,menu}config
+#+end_src
+
+You might otherwise use the defaults by running:
+
+#+begin_src sh
+make defconfig
+#+end_src
+
+You can also use an old =.config= file from another build:
+
+#+begin_src sh
+make oldconfig
+#+end_src
+
+There's a bunch of make recipes we can use to compile oursevles an
+image of the linux kernel:
+
+#+begin_src sh
+make # Compile the kernel, its modules and generate the list of dependencies
+make {b}zImage # Compile just the kernel
+make modules # Compile kernel modules
+make install # Install the kernel (at /boot)
+make modules_install # Install the kernel modules (at /lib/modules/<kernel-version>)
+#+end_src
+
+That's not enough though, we need to create an initramfs image for the
+kernel so that it can recognize and mount the root filesystem upon booting the system:
+
+#+begin_src sh
+mkinitrd /boot/initramfs-<linux-version>.img <linux-version>
+#+end_src
+
+* TODO Patching the linux kernel

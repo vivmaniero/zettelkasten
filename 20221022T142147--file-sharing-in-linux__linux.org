@@ -1,0 +1,166 @@
+#+title:      File sharing in Linux
+#+date:       [2022-10-22 Sat 14:21]
+#+filetags:   :linux:
+#+identifier: 20221022T142147
+
+* NFS
+
+NFS which stands for Network File System, is a protocol that allows a
+particular host to share files and directories across a network with
+any number of clients - this is particularly useful in a RAID setting.
+
+NFS is quite easy to install, here's how to do on a RHEL system: 
+
+#+begin_src sh
+yum install nfs-utils
+#+end_src
+
+** Sharing directories
+
+=/etc/exports= is the file we'll use to share directories with
+clients, its format is straightforward, here's an example:
+
+#+begin_src conf
+/srv/nfs	192.168.122.0/24(rw)
+#+end_src
+
+By default, NFS squashes root which simply translates to setting the
+files they create to be owned by an anonymous user, i.e. =nfsnobody=.
+
+If we wish to squash all users, we can use the =all_squash= option.
+
+** Exporting filesystems
+
+To export the filesystems defined in =/etc/exports=, we should run the
+following:
+
+#+begin_src sh
+exportfs -ravf
+#+end_src
+
+** Discovering shared directories
+
+To find out what kinds of directories an NFS server is sharing, we should run the following:
+
+#+begin_src sh
+showmount -e <hostname|ip_addr>
+#+end_src
+
+** Mounting a shared directory
+
+NFS uses standard UNIX commands, so we can mount these directories as regular filesystems:
+
+#+begin_src sh
+mount -t nfs <hostname|ip_addr>:<path_to_shared_dir> <mount_point>
+#+end_src
+
+* Samba
+
+Samba is similar to NFS, but works across various versions of
+Microsoft Windows and integrates quite well with the Windows
+ecosystem, e.g. Active Directory.
+
+Before we can use Samba, we must first create the users that can
+access the services we'll share, and we can do this via the following
+command:
+
+** Setting up users
+
+#+begin_src sh
+smbpasswd -a <username>
+#+end_src
+
+If we ever wish to disable a specific user's account, we can use the
+=-d= flag. If we'd like to re-enable their account, we should use the
+=-e= flag. We can also completely remove their account with the =-x=
+flag.
+
+** Sharing directories
+
+The following snippet shares a documents directory with clients in the
+network:
+
+#+begin_src sh
+[papers]
+	comment = Scientific documents
+	path = /samba/share/papers
+	valid users = samba-guest
+	writable = yes
+	browseable = yes
+	create mask = 0660
+#+end_src
+
+** Discovering shared directories
+
+We can view the services shared by the SMB server via:
+
+#+begin_src sh
+smbclient -L <hostname|ip_addr> -U <samba-user>
+#+end_src
+
+** Manipulating shared directories
+
+If we wish to access (and operate on) a particular shared directory, we can do so via:
+
+#+begin_src sh
+smbclient //<hostname|ip_addr>/<shared_service> -U <samba-user>
+#+end_src
+
+* FTP
+
+FTP is one of the oldest file sharing mechanisms, it uses two channels
+to transmit data between the client and the server, the first being
+the control channel which uses port =21=, and the second being the
+data channel which uses port =20=. Commands to the FTP server are sent
+through the control channel, and data is transferred through the data
+channel.
+
+To access an ftp server, we can use the browser, or the classic =ftp= command.
+
+#+begin_src sh
+ftp -p centi.grtcdr.tn
+
+Connected to centi.grtcdr.tn.
+220 Welcome to grtcdr's FTP service. 
+Name (centi.grtcdr.tn:grtcdr): bunny
+331 Please specify the password.
+Password:
+230 Login successful.
+#+end_src
+
+We can then use the following commands to act upon the files and directories that are shared by the server:
+
+| Command | Description                                        |
+|---------+----------------------------------------------------|
+| get     | Retrieve a file from the server                    |
+| put     | Place a file within the server                     |
+| ls      | List the contents of the server                    |
+| mget    | Retrieve multiple files from the server            |
+| mput    | Place multiple files within the server             |
+| cd      | Change to a particular directory within the server |
+| close   | Close the current connection                       |
+| open    | Connect to the specified host                      |
+
+vsftpd is an implementation of the FTP protocol, but it is built upon
+SFTP, which uses SSH to secure the data transmitted between the client
+and the server.
+
+Let's review a few interesting options from its configuration file
+(=/etc/vsftpd/vsftpd.conf=), all of which accept either a =YES= or
+=NO= as their value:
+
+- =anonymous_enable= -- allow/disallow anonymous (unauthenticated) connections
+- =local_enable= -- allow/disallow local (users in the =/etc/passwd= database) connections
+- =write_enable= -- allow/disallow writing/modifying the contents of the server
+- =chroot_local_user= -- lock users into their home directories
+- =local_root= -- specify the directory to share with clients
+
+vsftpd can allow us to block certain users from accessing the FTP
+server by placing their usernames inside =/etc/vsftpd/ftpusers= or
+=/etc/vsftpd/user_list=.
+
+If =userlist_deny= is set to =NO=, only the users specified within
+these files will be able to access the FTP server. If set to =YES=,
+the specified users will otherwise not be able to access it.
+
+
