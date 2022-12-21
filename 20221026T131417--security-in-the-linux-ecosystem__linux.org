@@ -17,7 +17,7 @@ system in which they are located.
 * NSS
 
 As the UNIX ecosystem grew, so did the methods we use to
-authenticate. This lead to the creation of the LDAP and NIS protocols
+authenticate. This led to the creation of the LDAP and NIS protocols
 which give us the opportunity to centrally define and configure the
 users of a given network.
 

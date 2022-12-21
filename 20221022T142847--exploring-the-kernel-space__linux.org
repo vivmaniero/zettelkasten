@@ -9,8 +9,6 @@ Programs in user space do not have direct access to the system's
 hardware, they have to interact with the various APIs offered by the
 Linux kernel.
 
-An interesting fact is that systemd is actually part of user space.
-
 It's loaded by the kernel in the early stages of the boot process, and
 hands over control to it so that it can manage the rest of the
 system's processes.
